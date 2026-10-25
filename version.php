@@ -22,8 +22,11 @@
  * @copyright  2012 Piers Harding
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-defined('MOODLE_INTERNAL') || die;
+defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2024062001;
-$plugin->requires  = 2022041900;
+$plugin->version   = 2026102500;
+$plugin->requires  = 2025100600; // Moodle 5.1.
+$plugin->supported = [501, 503];
 $plugin->component = 'tool_uploadcoursecategory';
+$plugin->maturity  = MATURITY_BETA;
+$plugin->release   = '2.0.0';

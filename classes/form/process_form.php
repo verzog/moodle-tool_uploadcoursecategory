@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Bulk course upload forms
+ * Step 2 form: upload settings and default values.
  *
  * @package    tool_uploadcoursecategory
  * @copyright  2007 Dan Poltawski
@@ -23,51 +23,11 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+namespace tool_uploadcoursecategory\form;
+
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->libdir.'/formslib.php');
-
-/**
- * Upload a file CVS file with course information.
- *
- * @copyright  2007 Petr Skoda  {@link http://skodak.org}
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-class admin_uploadcoursecategory_form1 extends moodleform {
-    /**
-     * Form definition.
-     *
-     * @return void
-     */
-    public function definition() {
-        $mform = $this->_form;
-
-        $mform->addElement('header', 'settingsheader', get_string('upload'));
-
-        $mform->addElement('filepicker', 'coursefile', get_string('file'));
-        $mform->addRule('coursefile', null, 'required');
-
-        $choices = csv_import_reader::get_delimiter_list();
-        $mform->addElement('select', 'delimiter_name', get_string('csvdelimiter', 'tool_uploadcoursecategory'), $choices);
-        if (array_key_exists('cfg', $choices)) {
-            $mform->setDefault('delimiter_name', 'cfg');
-        } else if (get_string('listsep', 'langconfig') == ';') {
-            $mform->setDefault('delimiter_name', 'semicolon');
-        } else {
-            $mform->setDefault('delimiter_name', 'comma');
-        }
-
-        $choices = core_text::get_encodings();
-        $mform->addElement('select', 'encoding', get_string('encoding', 'tool_uploadcoursecategory'), $choices);
-        $mform->setDefault('encoding', 'UTF-8');
-
-        $choices = ['10' => 10, '20' => 20, '100' => 100, '1000' => 1000, '100000' => 100000];
-        $mform->addElement('select', 'previewrows', get_string('rowpreviewnum', 'tool_uploadcoursecategory'), $choices);
-        $mform->setType('previewrows', PARAM_INT);
-
-        $this->add_action_buttons(false, get_string('uploadcoursecategories', 'tool_uploadcoursecategory'));
-    }
-}
+require_once($CFG->libdir . '/formslib.php');
 
 /**
  * Specify course upload details
@@ -75,7 +35,7 @@ class admin_uploadcoursecategory_form1 extends moodleform {
  * @copyright  2007 Petr Skoda  {@link http://skodak.org}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class admin_uploadcoursecategory_form2 extends moodleform {
+class process_form extends \moodleform {
     /**
      * Form definition.
      *
@@ -127,15 +87,23 @@ class admin_uploadcoursecategory_form2 extends moodleform {
 
         // Default values.
         $mform->addElement('header', 'defaultheader', get_string('defaultvalues', 'tool_uploadcoursecategory'));
-        $mform->addElement('text', 'ccname', get_string('ccnametemplate', 'tool_uploadcoursecategory'),
-            'maxlength="100" size="20"');
+        $mform->addElement(
+            'text',
+            'ccname',
+            get_string('ccnametemplate', 'tool_uploadcoursecategory'),
+            'maxlength="100" size="20"'
+        );
         $mform->setType('ccname', PARAM_TEXT);
         $mform->addHelpButton('ccname', 'namecoursecategory', 'tool_uploadcoursecategory');
         $mform->disabledIf('ccname', 'cctype', 'eq', CC_COURSE_ADD_UPDATE);
         $mform->disabledIf('ccname', 'cctype', 'eq', CC_COURSE_UPDATE);
 
-        $mform->addElement('text', 'ccidnumber', get_string('ccidnumbertemplate', 'tool_uploadcoursecategory'),
-        'maxlength="100" size="10"');
+        $mform->addElement(
+            'text',
+            'ccidnumber',
+            get_string('ccidnumbertemplate', 'tool_uploadcoursecategory'),
+            'maxlength="100" size="10"'
+        );
         $mform->setType('ccidnumber', PARAM_TEXT);
         $mform->addHelpButton('ccidnumber', 'idnumbercoursecategory');
         $mform->disabledIf('ccidnumber', 'cctype', 'eq', CC_COURSE_ADD_UPDATE);
@@ -147,7 +115,7 @@ class admin_uploadcoursecategory_form2 extends moodleform {
             $themes[''] = get_string('forceno');
             foreach ($themeobjects as $key => $theme) {
                 if (empty($theme->hidefromselector)) {
-                    $themes[$key] = get_string('pluginname', 'theme_'.$theme->name);
+                    $themes[$key] = get_string('pluginname', 'theme_' . $theme->name);
                 }
             }
             $mform->addElement('select', 'theme', get_string('forcetheme'), $themes);

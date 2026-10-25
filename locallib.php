@@ -53,8 +53,8 @@ define('CC_PWRESET_ALL', 2);
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class cc_progress_tracker {
-    /** @var array $_row - list of table rows. */
-    private $_row;
+    /** @var array $row - list of table rows. */
+    private $row;
     /** @var array $columns - list of table columns. */
     public $columns = ['status', 'line', 'id', 'name', 'idnumber', 'description', 'oldname', 'deleted'];
 
@@ -65,18 +65,19 @@ class cc_progress_tracker {
     public function start() {
         $ci = 0;
         echo '<table id="ccresults" class="generaltable boxaligncenter flexible-wrap" summary="'
-            .get_string('uploadcoursecategoriesresult', 'tool_uploadcoursecategory').'">';
+            . get_string('uploadcoursecategoriesresult', 'tool_uploadcoursecategory') . '">';
         echo '<tr class="heading r0">';
-        echo '<th class="header c'.$ci++.'" scope="col">'.get_string('status').'</th>';
-        echo '<th class="header c'.$ci++.'" scope="col">'.get_string('cccsvline', 'tool_uploadcoursecategory').'</th>';
-        echo '<th class="header c'.$ci++.'" scope="col">ID</th>';
-        echo '<th class="header c'.$ci++.'" scope="col">'.get_string('name').'</th>';
-        echo '<th class="header c'.$ci++.'" scope="col">'.get_string('idnumber').'</th>';
-        echo '<th class="header c'.$ci++.'" scope="col">'.get_string('description').'</th>';
-        echo '<th class="header c'.$ci++.'" scope="col">'.get_string('oldnamecoursecategory', 'tool_uploadcoursecategory').'</th>';
-        echo '<th class="header c'.$ci++.'" scope="col">'.get_string('delete').'</th>';
+        echo '<th class="header c' . $ci++ . '" scope="col">' . get_string('status') . '</th>';
+        echo '<th class="header c' . $ci++ . '" scope="col">' . get_string('cccsvline', 'tool_uploadcoursecategory') . '</th>';
+        echo '<th class="header c' . $ci++ . '" scope="col">ID</th>';
+        echo '<th class="header c' . $ci++ . '" scope="col">' . get_string('name') . '</th>';
+        echo '<th class="header c' . $ci++ . '" scope="col">' . get_string('idnumber') . '</th>';
+        echo '<th class="header c' . $ci++ . '" scope="col">' . get_string('description') . '</th>';
+        echo '<th class="header c' . $ci++ . '" scope="col">'
+            . get_string('oldnamecoursecategory', 'tool_uploadcoursecategory') . '</th>';
+        echo '<th class="header c' . $ci++ . '" scope="col">' . get_string('delete') . '</th>';
         echo '</tr>';
-        $this->_row = null;
+        $this->row = null;
     }
 
     /**
@@ -84,26 +85,26 @@ class cc_progress_tracker {
      * @return void
      */
     public function flush() {
-        if (empty($this->_row) || empty($this->_row['line']['normal'])) {
+        if (empty($this->row) || empty($this->row['line']['normal'])) {
             // Nothing to print - each line has to have at least number.
-            $this->_row = [];
+            $this->row = [];
             foreach ($this->columns as $col) {
-                $this->_row[$col] = ['normal' => '', 'info' => '', 'warning' => '', 'error' => ''];
+                $this->row[$col] = ['normal' => '', 'info' => '', 'warning' => '', 'error' => ''];
             }
             return;
         }
         $ci = 0;
         $ri = 1;
-        echo '<tr class="r'.$ri.'">';
-        foreach ($this->_row as $key => $field) {
+        echo '<tr class="r' . $ri . '">';
+        foreach ($this->row as $key => $field) {
             foreach ($field as $type => $content) {
                 if ($field[$type] !== '') {
-                    $field[$type] = '<span class="cc'.$type.'">'.$field[$type].'</span>';
+                    $field[$type] = '<span class="cc' . $type . '">' . $field[$type] . '</span>';
                 } else {
                     unset($field[$type]);
                 }
             }
-            echo '<td class="cell c'.$ci++.'">';
+            echo '<td class="cell c' . $ci++ . '">';
             if (!empty($field)) {
                 echo implode('<br />', $field);
             } else {
@@ -113,7 +114,7 @@ class cc_progress_tracker {
         }
         echo '</tr>';
         foreach ($this->columns as $col) {
-            $this->_row[$col] = ['normal' => '', 'info' => '', 'warning' => '', 'error' => ''];
+            $this->row[$col] = ['normal' => '', 'info' => '', 'warning' => '', 'error' => ''];
         }
     }
 
@@ -126,20 +127,20 @@ class cc_progress_tracker {
      * @return void
      */
     public function track($col, $msg, $level = 'normal', $merge = true) {
-        if (empty($this->_row)) {
+        if (empty($this->row)) {
             $this->flush(); // Init arrays.
         }
         if (!in_array($col, $this->columns)) {
-            debugging('Incorrect column:'.$col);
+            debugging('Incorrect column:' . $col);
             return;
         }
         if ($merge) {
-            if ($this->_row[$col][$level] != '') {
-                $this->_row[$col][$level] .= '<br />';
+            if ($this->row[$col][$level] != '') {
+                $this->row[$col][$level] .= '<br />';
             }
-            $this->_row[$col][$level] .= $msg;
+            $this->row[$col][$level] .= $msg;
         } else {
-            $this->_row[$col][$level] = $msg;
+            $this->row[$col][$level] = $msg;
         }
     }
 
@@ -212,9 +213,9 @@ function cc_increment_name($name) {
     $name = array_pop($categories);
 
     if (!preg_match_all('/(.*?)([0-9]+)$/', $name, $matches)) {
-        $name = $name.'2';
+        $name = $name . '2';
     } else {
-        $name = $matches[1][0].($matches[2][0] + 1);
+        $name = $matches[1][0] . ($matches[2][0] + 1);
     }
 
     if ($DB->record_exists('course_categories', ['name' => $name])) {
@@ -234,9 +235,9 @@ function cc_increment_idnumber($idnumber) {
     global $DB, $CFG;
 
     if (!preg_match_all('/(.*?)([0-9]+)$/', $idnumber, $matches)) {
-        $idnumber = $idnumber.'2';
+        $idnumber = $idnumber . '2';
     } else {
-        $idnumber = $matches[1][0].($matches[2][0] + 1);
+        $idnumber = $matches[1][0] . ($matches[2][0] + 1);
     }
 
     if ($DB->record_exists('course_categories', ['idnumber' => $idnumber])) {
@@ -320,10 +321,8 @@ function cc_process_template_callback($name, $description, $idnumber, $block) {
     }
 
     if (!empty($block[2])) {
-        $repl = core_text::substr($repl, 0 , $block[2]);
+        $repl = core_text::substr($repl, 0, $block[2]);
     }
 
     return $repl;
 }
-
-
