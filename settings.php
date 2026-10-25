@@ -23,12 +23,13 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die;
+defined('MOODLE_INTERNAL') || die();
 
 if (has_capability('moodle/site:uploadusers', context_system::instance())) {
     $ADMIN->add('courses', new admin_externalpage(
         'tooluploadcoursecategory',
         get_string('uploadcoursecategories', 'tool_uploadcoursecategory'),
         "$CFG->wwwroot/$CFG->admin/tool/uploadcoursecategory/index.php",
-        'moodle/site:uploadusers'));
+        'moodle/site:uploadusers'
+    ));
 }

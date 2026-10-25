@@ -24,12 +24,11 @@
  */
 
 require('../../../config.php');
-require_once($CFG->libdir.'/adminlib.php');
-require_once($CFG->libdir.'/csvlib.class.php');
-require_once($CFG->dirroot.'/course/lib.php');
+require_once($CFG->libdir . '/adminlib.php');
+require_once($CFG->libdir . '/csvlib.class.php');
+require_once($CFG->dirroot . '/course/lib.php');
 require_once($CFG->libdir . '/filelib.php');
 require_once('locallib.php');
-require_once('coursecategory_form.php');
 
 $iid         = optional_param('iid', '', PARAM_INT);
 $previewrows = optional_param('previewrows', 10, PARAM_INT);
@@ -72,13 +71,13 @@ $today = make_timestamp(date('Y', $today), date('m', $today), date('d', $today),
 
 // Array of all valid fields for validation.
 $stdfields = ['name', 'description', 'idnumber', 'theme', 'visible',
-        'deleted',      // 1 means delete course category.
-        'oldname',      // For renaming.
+        'deleted', // 1 means delete course category.
+        'oldname', // For renaming.
 ];
 
 
 if (empty($iid)) {
-    $mform1 = new admin_uploadcoursecategory_form1();
+    $mform1 = new \tool_uploadcoursecategory\form\upload_form();
 
     if ($formdata = $mform1->get_data()) {
         $iid = csv_import_reader::get_new_iid('uploadcoursecategory');
@@ -97,12 +96,14 @@ if (empty($iid)) {
         // Test if columns ok.
         $filecolumns = cc_validate_coursecategory_upload_columns($cir, $stdfields, $returnurl);
         // Continue to form2.
-
     } else {
         echo $OUTPUT->header();
 
-        echo $OUTPUT->heading_with_help(get_string('uploadcoursecategories', 'tool_uploadcoursecategory'),
-            'uploadcoursecategories', 'tool_uploadcoursecategory');
+        echo $OUTPUT->heading_with_help(
+            get_string('uploadcoursecategories', 'tool_uploadcoursecategory'),
+            'uploadcoursecategories',
+            'tool_uploadcoursecategory'
+        );
 
         $mform1->display();
         echo $OUTPUT->footer();
@@ -114,21 +115,19 @@ if (empty($iid)) {
 }
 
 $frontpagecontext = context_course::instance(SITEID);
-$mform2 = new admin_uploadcoursecategory_form2(null, [
+$mform2 = new \tool_uploadcoursecategory\form\process_form(null, [
     'contextid' => $frontpagecontext->id,
     'columns' => $filecolumns,
     'data' => [
         'iid' => $iid,
         'previewrows' => $previewrows,
-        ],
     ],
-);
+]);
 
 // If a file has been uploaded, then process it.
 if ($formdata = $mform2->is_cancelled()) {
     $cir->cleanup(true);
     redirect($returnurl);
-
 } else if ($formdata = $mform2->get_data()) {
     // Print the header.
     echo $OUTPUT->header();
@@ -268,8 +267,12 @@ if ($formdata = $mform2->is_cancelled()) {
         }
 
         // Find category.
-        if ($existingcategory = $DB->get_record('course_categories',
-            ['name' => trim($coursecategory->name), 'parent' => $coursecategory->parent])) {
+        if (
+            $existingcategory = $DB->get_record(
+                'course_categories',
+                ['name' => trim($coursecategory->name), 'parent' => $coursecategory->parent]
+            )
+        ) {
             $upt->track('id', $existingcategory->id, 'normal', false);
         }
 
@@ -280,7 +283,7 @@ if ($formdata = $mform2->is_cancelled()) {
                 $oldidnumber = $coursecategory->idnumber;
                 $coursecategory->idnumber = cc_increment_idnumber($coursecategory->idnumber);
                 if ($coursecategory->idnumber !== $oldidnumber) {
-                    $upt->track('idnumber', s($oldidnumber).'-->'.s($coursecategory->idnumber), 'info');
+                    $upt->track('idnumber', s($oldidnumber) . '-->' . s($coursecategory->idnumber), 'info');
                 }
             }
             $existingcategory = false;
@@ -300,7 +303,7 @@ if ($formdata = $mform2->is_cancelled()) {
         // Notify about any name changes.
         if ($originalname !== $newname) {
             $upt->track('name', '', 'normal', false);   // Clear previous.
-            $upt->track('name', s($originalname).'-->'.s($coursecategory->name), 'info');
+            $upt->track('name', s($originalname) . '-->' . s($coursecategory->name), 'info');
         } else {
             $upt->track('name', s($coursecategory->name), 'normal', false);
         }
@@ -320,8 +323,8 @@ if ($formdata = $mform2->is_cancelled()) {
                 }
             } else {
                 // Process templates.
-                if (isset($formdata->{"cc".$field}) && !empty($formdata->{"cc".$field}) && empty($coursecategory->$field)) {
-                    $coursecategory->$field = cc_process_template($formdata->{"cc".$field}, $coursecategory);
+                if (isset($formdata->{"cc" . $field}) && !empty($formdata->{"cc" . $field}) && empty($coursecategory->$field)) {
+                    $coursecategory->$field = cc_process_template($formdata->{"cc" . $field}, $coursecategory);
                 }
             }
         }
@@ -349,7 +352,7 @@ if ($formdata = $mform2->is_cancelled()) {
         unset($coursecategory->deleted);
 
         // Renaming requested?
-        if (!empty($coursecategory->oldname) ) {
+        if (!empty($coursecategory->oldname)) {
             if (!$allowrenames) {
                 $coursecategoriesskipped++;
                 $upt->track('status', $strcoursecategorynotrenamedoff, 'warning');
@@ -378,8 +381,10 @@ if ($formdata = $mform2->is_cancelled()) {
                 foreach ($categories as $cat) {
                     $cat = trim($cat);
                     // Does the category (for parent) exist - does the category hierachy make sense.
-                    $category = $DB->get_record('course_categories',
-                        ['name' => trim($cat), 'parent' => $coursecategory->oldparent]);
+                    $category = $DB->get_record(
+                        'course_categories',
+                        ['name' => trim($cat), 'parent' => $coursecategory->oldparent]
+                    );
                     if (empty($category)) {
                         $upt->track('status', get_string('invalidvalue', 'tool_uploadcoursecategory', 'oldname'), 'error');
                         $upt->track('oldname', $errorstr, 'error');
@@ -398,8 +403,12 @@ if ($formdata = $mform2->is_cancelled()) {
 
 
             // No guessing when looking for old name, it must be exact match.
-            if ($oldcoursecategory = $DB->get_record('course_categories',
-                ['name' => trim($coursecategory->oldname), 'parent' => $coursecategory->oldparent])) {
+            if (
+                $oldcoursecategory = $DB->get_record(
+                    'course_categories',
+                    ['name' => trim($coursecategory->oldname), 'parent' => $coursecategory->oldparent]
+                )
+            ) {
                 $upt->track('id', $oldcoursecategory->id, 'normal', false);
                 require_capability('moodle/category:manage', get_category_or_system_context((int)$oldcoursecategory->parent));
                 $DB->set_field('course_categories', 'name', $coursecategory->name, ['id' => $oldcoursecategory->id]);
@@ -413,7 +422,7 @@ if ($formdata = $mform2->is_cancelled()) {
                     $existingcategory->context->mark_dirty();
                 }
                 $upt->track('name', '', 'normal', false);   // Clear previous.
-                $upt->track('name', s($oldname).'-->'.s($coursecategory->name), 'info');
+                $upt->track('name', s($oldname) . '-->' . s($coursecategory->name), 'info');
                 $upt->track('status', $strcoursecategoryrenamed);
                 $renames++;
             } else {
@@ -469,8 +478,12 @@ if ($formdata = $mform2->is_cancelled()) {
             $coursecategory->id = $existingcategory->id;
             require_capability('moodle/category:manage', get_category_or_system_context((int)$existingcategory->parent));
 
-            $upt->track('name', html_writer::link(new moodle_url('/course/index.php', ['categoryid' => $existingcategory->id]),
-                s($existingcategory->name)),
+            $upt->track(
+                'name',
+                html_writer::link(
+                    new moodle_url('/course/index.php', ['categoryid' => $existingcategory->id]),
+                    s($existingcategory->name)
+                ),
                 'normal',
                 false
             );
@@ -504,7 +517,8 @@ if ($formdata = $mform2->is_cancelled()) {
                     }
                     if ($existingcategory->$column !== $coursecategory->$column) {
                         if (in_array($column, $upt->columns)) {
-                            $upt->track($column, s($existingcategory->$column).'-->'.s($coursecategory->$column), 'info', false);
+                            $change = s($existingcategory->$column) . '-->' . s($coursecategory->$column);
+                            $upt->track($column, $change, 'info', false);
                         }
                         $existingcategory->$column = $coursecategory->$column;
                         $doupdate = true;
@@ -532,7 +546,6 @@ if ($formdata = $mform2->is_cancelled()) {
                         $SESSION->bulk_coursecategories[] = $coursecategory->id;
                     }
                 }
-
             } else {
                 // No course information changed.
                 $upt->track('status', $strcoursecategoryuptodate);
@@ -544,7 +557,6 @@ if ($formdata = $mform2->is_cancelled()) {
                     }
                 }
             }
-
         } else {
             // Save the new course to the database.
             $coursecategory->timemodified = time();
@@ -564,8 +576,12 @@ if ($formdata = $mform2->is_cancelled()) {
                 $skip = true;
                 continue;
             }
-            $upt->track('name', html_writer::link(new moodle_url('/course/index.php', ['categoryid' => $coursecategory->id]),
-                s($coursecategory->name)),
+            $upt->track(
+                'name',
+                html_writer::link(
+                    new moodle_url('/course/index.php', ['categoryid' => $coursecategory->id]),
+                    s($coursecategory->name)
+                ),
                 'normal',
                 false
             );
@@ -590,23 +606,23 @@ if ($formdata = $mform2->is_cancelled()) {
     echo $OUTPUT->box_start('boxwidthnarrow boxaligncenter generalbox', 'uploadresults');
     echo '<p>';
     if ($optype != CC_COURSE_UPDATE) {
-        echo get_string('coursecategoriescreated', 'tool_uploadcoursecategory').': '.$coursecategoriesnew.'<br />';
+        echo get_string('coursecategoriescreated', 'tool_uploadcoursecategory') . ': ' . $coursecategoriesnew . '<br />';
     }
     if ($optype == CC_COURSE_UPDATE || $optype == CC_COURSE_ADD_UPDATE) {
-        echo get_string('coursecategoriesupdated', 'tool_uploadcoursecategory').': '.$coursecategoriesupdated.'<br />';
+        echo get_string('coursecategoriesupdated', 'tool_uploadcoursecategory') . ': ' . $coursecategoriesupdated . '<br />';
     }
     if ($allowdeletes) {
-        echo get_string('coursecategoriesdeleted', 'tool_uploadcoursecategory').': '.$deletes.'<br />';
-        echo get_string('deleteerrors', 'tool_uploadcoursecategory').': '.$deleteerrors.'<br />';
+        echo get_string('coursecategoriesdeleted', 'tool_uploadcoursecategory') . ': ' . $deletes . '<br />';
+        echo get_string('deleteerrors', 'tool_uploadcoursecategory') . ': ' . $deleteerrors . '<br />';
     }
     if ($allowrenames) {
-        echo get_string('coursecategoriesrenamed', 'tool_uploadcoursecategory').': '.$renames.'<br />';
-        echo get_string('renameerrors', 'tool_uploadcoursecategory').': '.$renameerrors.'<br />';
+        echo get_string('coursecategoriesrenamed', 'tool_uploadcoursecategory') . ': ' . $renames . '<br />';
+        echo get_string('renameerrors', 'tool_uploadcoursecategory') . ': ' . $renameerrors . '<br />';
     }
     if ($coursecategoriesskipped) {
-        echo get_string('coursecategoriesskipped', 'tool_uploadcoursecategory').': '.$coursecategoriesskipped.'<br />';
+        echo get_string('coursecategoriesskipped', 'tool_uploadcoursecategory') . ': ' . $coursecategoriesskipped . '<br />';
     }
-    echo get_string('errors', 'tool_uploadcoursecategory').': '.$coursecategorieserrors.'</p>';
+    echo get_string('errors', 'tool_uploadcoursecategory') . ': ' . $coursecategorieserrors . '</p>';
     echo $OUTPUT->box_end();
 
     if ($bulk) {
@@ -646,8 +662,10 @@ while ($linenum <= $previewrows && $fields = $cir->next()) {
             $rowcols['status'][] = get_string('invalidnameupload');
         }
         if ($coursecategoryid = $DB->get_field('course_categories', 'id', ['name' => $stdname])) {
-            $rowcols['name'] = html_writer::link(new moodle_url('/course/view.php', ['id' => $coursecategoryid]),
-                $rowcols['name']);
+            $rowcols['name'] = html_writer::link(
+                new moodle_url('/course/view.php', ['id' => $coursecategoryid]),
+                $rowcols['name']
+            );
         }
     } else {
         $rowcols['status'][] = get_string('missingname');
